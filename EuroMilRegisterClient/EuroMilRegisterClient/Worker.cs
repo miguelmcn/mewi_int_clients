@@ -2,7 +2,7 @@
 
 namespace EuroMilRegisterClient
 {
-    public class Worker(ILogger<Worker> logger) : BackgroundService
+    public class Worker(ILogger<Worker> logger, EuroMilRegisterGateway euroMilRegisterGateway) : BackgroundService
     {
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
@@ -13,22 +13,22 @@ namespace EuroMilRegisterClient
                     logger.LogInformation("Registering at: {time}", DateTimeOffset.Now);
                 }
 
-                using var channel = GrpcChannel.ForAddress("http://localhost:5246");
-                var client = new Euromil.EuromilClient(channel);
-                var reply = await client.RegisterEuroMilAsync(
-                                  new RegisterRequest
-                                  {
-                                      Checkid = "1234567890123456",
-                                      Key = Guid.NewGuid().ToString()
-                                  });
+                var register = new RegisterRequest
+                {
+                    Checkid = "1234567890123456",
+                    Key = Guid.NewGuid().ToString()
+                };
+
+                var reply = await euroMilRegisterGateway.RegisterAsync(register);
 
                 logger.LogInformation(reply.Message);
-
 
                 // TODO: do something with check
 
                 await Task.Delay(1000, stoppingToken);
             }
         }
+
+        
     }
 }
